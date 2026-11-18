@@ -989,11 +989,13 @@ window.ndDecide = (id) => {
     [`Stock in the cluster warehouse (report ${ndDate(date)})`, fxFmt(qty)],
     ['Essential list', ess ? (ls ? 'Listed – life-saving' : 'Listed – essential') : 'Not listed'],
     ['Dashboard check result', v.h]];
-  const L = ['Technical opinion request – direct purchase of a therapeutic nutrition product', '', '▪ Requested item', ...info.map(([k, x]) => `${k}: ${x}`), '', `▪ Alternatives in stock in the warehouse (${altRows.length})`];
+  if (!v.buy) info.push(['Recommendation', v.p]);
+  const title = v.buy ? 'Technical opinion request – direct purchase of a therapeutic nutrition product' : 'Reply to a therapeutic nutrition product request – no direct purchase needed';
+  const L = [title, '', '▪ Requested item', ...info.map(([k, x]) => `${k}: ${x}`), '', `▪ Alternatives in stock in the warehouse (${altRows.length})`];
   if (!altRows.length) L.push('No alternative in stock in the warehouse');
   altRows.forEach((a, i) => L.push(`${i + 1}) ${a.kind}: ${a.desc}`, `   Trade name: ${a.trade} | MOH code: ${a.moh} | NUPCO code: ${a.nupco} | Stock: ${fxFmt(a.qty)}`));
   const text = L.join('\n');
-  return { o, item, qty, steps, v, text, ess, info, altRows };
+  return { o, item, qty, steps, v, text, ess, info, altRows, title };
 };
 window.ndDecideRender = (el, id) => {
   el.replaceChildren();
@@ -1007,23 +1009,22 @@ window.ndDecideRender = (el, id) => {
   });
   const v = fxEl('div', 'dp-verdict ' + r.v.tone);
   v.append(fxEl('span', 'lbl', 'Result'), fxEl('h3', null, r.v.h), fxEl('p', null, r.v.p));
-  let req = null;
   if (r.v.buy) {
     v.append(fxEl('h4', null, 'Before submitting, make sure of:'));
     const ul = fxEl('ul');
     for (const t of ['A search for surplus in cluster hospitals, and a transfer before buying.', 'A documented clinical indication.', 'Quantity calculated with the approved formula, with shelf life covering the consumption period.', 'The need is not split, and a single request does not exceed SAR 100,000.']) ul.append(fxEl('li', null, t));
     v.append(ul);
-    req = fxEl('div', 'dp-req');
-    const doc = window.ndReqDoc(r);
-    const row = fxEl('div', 'row');
-    const b = fxEl('button', 'nd-btn pri', 'Copy as a table'); b.type = 'button';
-    const b2 = fxEl('button', 'nd-btn', 'Copy as text (WhatsApp)'); b2.type = 'button';
-    const msg = fxEl('span', 'msg'); msg.setAttribute('aria-live', 'polite');
-    b.addEventListener('click', async () => { msg.textContent = (await window.ndCopyReq(doc, r.text)) ? 'Copied. It pastes as a table in email and Word.' : 'Could not copy; select the table and copy it manually.'; });
-    b2.addEventListener('click', async () => { msg.textContent = (await window.ndCopyText(r.text)) ? 'Text copied.' : 'Could not copy; select the table and copy it manually.'; });
-    row.append(b, b2, msg); req.append(fxEl('h4', null, 'Technical-opinion request, ready to copy'), doc, row);
   }
-  body.append(ol, v); if (req) body.append(req); el.append(body);
+  const req = fxEl('div', 'dp-req');
+  const doc = window.ndReqDoc(r);
+  const row = fxEl('div', 'row');
+  const b = fxEl('button', 'nd-btn pri', 'Copy as a table'); b.type = 'button';
+  const b2 = fxEl('button', 'nd-btn', 'Copy as text (WhatsApp)'); b2.type = 'button';
+  const msg = fxEl('span', 'msg'); msg.setAttribute('aria-live', 'polite');
+  b.addEventListener('click', async () => { msg.textContent = (await window.ndCopyReq(doc, r.text)) ? 'Copied. It pastes as a table in email and Word.' : 'Could not copy; select the table and copy it manually.'; });
+  b2.addEventListener('click', async () => { msg.textContent = (await window.ndCopyText(r.text)) ? 'Text copied.' : 'Could not copy; select the table and copy it manually.'; });
+  row.append(b, b2, msg); req.append(fxEl('h4', null, r.v.buy ? 'Technical-opinion request, ready to copy' : 'Reply, ready to copy'), doc, row);
+  body.append(ol, v, req); el.append(body);
 };
 const dpCell = (tag, txt, st) => { const c = fxEl(tag, null, txt); c.setAttribute('style', 'border:1px solid #9aa5ae;padding:5px 8px;text-align:left;vertical-align:top;color:#1f1e1d;' + (st || '')); return c; };
 const dpTable = () => { const t = fxEl('table'); t.setAttribute('style', 'border-collapse:collapse;width:100%;margin:0 0 10px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#1f1e1d;background:#fff'); return t; };
@@ -1037,7 +1038,7 @@ window.ndReqDoc = (r) => {
   at.append(hr);
   if (!r.altRows.length) { const tr = fxEl('tr'); const c = dpCell('td', 'No alternative in stock in the warehouse'); c.colSpan = 7; tr.append(c); at.append(tr); }
   r.altRows.forEach((a, i) => { const tr = fxEl('tr'); tr.append(dpCell('td', String(i + 1)), dpCell('td', a.kind, 'white-space:nowrap;'), dpCell('td', a.desc), dpCell('td', a.trade), dpCell('td', a.moh, 'white-space:nowrap;'), dpCell('td', a.nupco, 'white-space:nowrap;'), dpCell('td', fxFmt(a.qty), 'white-space:nowrap;')); at.append(tr); });
-  box.append(dpPara('Technical opinion request – direct purchase of a therapeutic nutrition product', 'margin-top:0;font-size:15px;color:#1a6fa0;'), dpPara('Requested item', 'font-size:13px;color:#1f1e1d;'), kv(r.info),
+  box.append(dpPara(r.title, 'margin-top:0;font-size:15px;color:#1a6fa0;'), dpPara('Requested item', 'font-size:13px;color:#1f1e1d;'), kv(r.info),
     dpPara(`Alternatives in stock in the warehouse (${r.altRows.length})`, 'font-size:13px;color:#1f1e1d;'), at);
   return box;
 };

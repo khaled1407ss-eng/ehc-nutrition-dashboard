@@ -1045,11 +1045,13 @@ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
       [`الرصيد في مستودع التجمع (تقرير ${fxDate(date)})`, fxFmt(qty)],
       ['القائمة الأساسية', ess ? (ess.priority === 'إنقاذ حياة' ? 'وارد – إنقاذ حياة' : 'وارد – أساسي') : 'غير وارد'],
       ['نتيجة التحقق في لوحة المخزون', v.h]];
-    const L = ['طلب رأي فني – شراء مباشر لمنتج تغذية علاجية', '', '▪ بيانات الصنف المطلوب', ...info.map(([k, x]) => `${k}: ${x}`), '', `▪ البدائل المتوفرة في المستودع (${altRows.length})`];
+    if (!v.buy) info.push(['التوصية', v.p]);
+    const title = v.buy ? 'طلب رأي فني – شراء مباشر لمنتج تغذية علاجية' : 'الرد على طلب منتج تغذية علاجية – لا يلزم شراء مباشر';
+    const L = [title, '', '▪ بيانات الصنف المطلوب', ...info.map(([k, x]) => `${k}: ${x}`), '', `▪ البدائل المتوفرة في المستودع (${altRows.length})`];
     if (!altRows.length) L.push('لا يوجد بديل متوفر في المستودع');
     altRows.forEach((a, i) => L.push(`${i + 1}) ${a.kind}: ${a.desc}`, `   الاسم التجاري: ${a.trade} | الرقم الوزاري: ${a.moh} | كود نبكو: ${a.nupco} | الرصيد: ${fxFmt(a.qty)}`));
     const text = L.join('\n');
-    return { o, item, qty, steps, v, text, ess, info, altRows };
+    return { o, item, qty, steps, v, text, ess, info, altRows, title };
   };
 
   const dpCell = (tag, txt, st) => { const c = fxEl(tag, null, txt); c.setAttribute('style', 'border:1px solid #9aa5ae;padding:5px 8px;text-align:right;vertical-align:top;color:#1f1e1d;' + (st || '')); return c; };
@@ -1064,7 +1066,7 @@ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
     at.append(hr);
     if (!r.altRows.length) { const tr = fxEl('tr'); const c = dpCell('td', 'لا يوجد بديل متوفر في المستودع'); c.colSpan = 7; tr.append(c); at.append(tr); }
     r.altRows.forEach((a, i) => { const tr = fxEl('tr'); tr.append(dpCell('td', String(i + 1)), dpCell('td', a.kind, 'white-space:nowrap;'), dpCell('td', a.desc), dpCell('td', a.trade), dpCell('td', a.moh, 'white-space:nowrap;'), dpCell('td', a.nupco, 'white-space:nowrap;'), dpCell('td', fxFmt(a.qty), 'white-space:nowrap;')); at.append(tr); });
-    box.append(dpPara('طلب رأي فني – شراء مباشر لمنتج تغذية علاجية', 'margin-top:0;font-size:15px;color:#1a6fa0;'), dpPara('بيانات الصنف المطلوب', 'font-size:13px;color:#1f1e1d;'), kv(r.info),
+    box.append(dpPara(r.title, 'margin-top:0;font-size:15px;color:#1a6fa0;'), dpPara('بيانات الصنف المطلوب', 'font-size:13px;color:#1f1e1d;'), kv(r.info),
       dpPara(`البدائل المتوفرة في المستودع (${r.altRows.length})`, 'font-size:13px;color:#1f1e1d;'), at);
     return box;
   };
@@ -1097,23 +1099,22 @@ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
     });
     const v = fxEl('div', 'dp-verdict ' + r.v.tone);
     v.append(fxEl('span', 'lbl', 'النتيجة'), fxEl('h3', null, r.v.h), fxEl('p', null, r.v.p));
-    let req = null;
     if (r.v.buy) {
       v.append(fxEl('h4', null, 'قبل رفع الطلب تأكد من:'));
       const ul = fxEl('ul');
       for (const t of ['البحث عن فائض الصنف في مستشفيات التجمع ومناقلته قبل الشراء.', 'وجود مؤشر سريري موثّق.', 'حساب الكمية بالمعادلة المعتمدة، وأن تغطي الصلاحية فترة الاستهلاك.', 'عدم تجزئة الاحتياج، وألا يتجاوز الطلب الواحد 100,000 ريال.']) ul.append(fxEl('li', null, t));
       v.append(ul);
-      req = fxEl('div', 'dp-req');
-      const doc = window.ndReqDoc(r);
-      const row = fxEl('div', 'row');
-      const b = fxEl('button', 'nd-btn pri', 'نسخ الطلب كجدول'); b.type = 'button';
-      const b2 = fxEl('button', 'nd-btn', 'نسخ كنص للواتساب'); b2.type = 'button';
-      const msg = fxEl('span', 'msg'); msg.setAttribute('aria-live', 'polite');
-      b.addEventListener('click', async () => { msg.textContent = (await window.ndCopyReq(doc, r.text)) ? 'تم النسخ: يُلصق جدولاً في الإيميل وWord.' : 'تعذّر النسخ؛ حدّد الجدول وانسخه يدوياً.'; });
-      b2.addEventListener('click', async () => { msg.textContent = (await window.ndCopyText(r.text)) ? 'تم نسخ النص.' : 'تعذّر النسخ؛ حدّد الجدول وانسخه يدوياً.'; });
-      row.append(b, b2, msg); req.append(fxEl('h4', null, 'طلب الرأي الفني جاهز للنسخ'), doc, row);
     }
-    body.append(ol, v); if (req) body.append(req);
+    const req = fxEl('div', 'dp-req');
+    const doc = window.ndReqDoc(r);
+    const row = fxEl('div', 'row');
+    const b = fxEl('button', 'nd-btn pri', r.v.buy ? 'نسخ الطلب كجدول' : 'نسخ الرد كجدول'); b.type = 'button';
+    const b2 = fxEl('button', 'nd-btn', 'نسخ كنص للواتساب'); b2.type = 'button';
+    const msg = fxEl('span', 'msg'); msg.setAttribute('aria-live', 'polite');
+    b.addEventListener('click', async () => { msg.textContent = (await window.ndCopyReq(doc, r.text)) ? 'تم النسخ: يُلصق جدولاً في الإيميل وWord.' : 'تعذّر النسخ؛ حدّد الجدول وانسخه يدوياً.'; });
+    b2.addEventListener('click', async () => { msg.textContent = (await window.ndCopyText(r.text)) ? 'تم نسخ النص.' : 'تعذّر النسخ؛ حدّد الجدول وانسخه يدوياً.'; });
+    row.append(b, b2, msg); req.append(fxEl('h4', null, r.v.buy ? 'طلب الرأي الفني جاهز للنسخ' : 'الرد جاهز للنسخ'), doc, row);
+    body.append(ol, v, req);
     el.append(head, body);
   };
 
