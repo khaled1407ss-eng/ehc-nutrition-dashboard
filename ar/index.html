@@ -1042,9 +1042,7 @@ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
         moh: (st[0] && st[0].moh_code) || a.moh || '—', nupco: a.code || (st[0] && st[0].nupco_code) || '—', qty: a.qty };
     });
     const info = [['الصنف', item.desc_ar], ['الاسم التجاري', item.trade_name || '—'], ['الرقم الوزاري', item.moh_code || '—'], ['كود نبكو', item.nupco_code || '—'],
-      [`الرصيد في مستودع التجمع (تقرير ${fxDate(date)})`, fxFmt(qty)],
-      ['القائمة الأساسية', ess ? (ess.priority === 'إنقاذ حياة' ? 'وارد – إنقاذ حياة' : 'وارد – أساسي') : 'غير وارد'],
-      ['نتيجة التحقق في لوحة المخزون', v.h]];
+      [`الرصيد في مستودع التجمع (تقرير ${fxDate(date)})`, fxFmt(qty)]];
     if (!v.buy) info.push(['التوصية', v.p]);
     const title = v.buy ? 'طلب رأي فني – شراء مباشر لمنتج تغذية علاجية' : 'الرد على طلب منتج تغذية علاجية – لا يلزم شراء مباشر';
     const L = [title, '', '▪ بيانات الصنف المطلوب', ...info.map(([k, x]) => `${k}: ${x}`), '', `▪ البدائل المتوفرة في المستودع (${altRows.length})`];

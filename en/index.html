@@ -986,9 +986,7 @@ window.ndDecide = (id) => {
       moh: (st[0] && st[0].moh_code) || a.moh || '—', nupco: a.code || (st[0] && st[0].nupco_code) || '—', qty: a.qty };
   });
   const info = [['Item', item.desc], ['Trade name', item.trade_name || '—'], ['MOH code', item.moh_code || '—'], ['NUPCO code', item.nupco_code || '—'],
-    [`Stock in the cluster warehouse (report ${ndDate(date)})`, fxFmt(qty)],
-    ['Essential list', ess ? (ls ? 'Listed – life-saving' : 'Listed – essential') : 'Not listed'],
-    ['Dashboard check result', v.h]];
+    [`Stock in the cluster warehouse (report ${ndDate(date)})`, fxFmt(qty)]];
   if (!v.buy) info.push(['Recommendation', v.p]);
   const title = v.buy ? 'Technical opinion request – direct purchase of a therapeutic nutrition product' : 'Reply to a therapeutic nutrition product request – no direct purchase needed';
   const L = [title, '', '▪ Requested item', ...info.map(([k, x]) => `${k}: ${x}`), '', `▪ Alternatives in stock in the warehouse (${altRows.length})`];
